@@ -1,5 +1,12 @@
 # @ifc-lite/codegen
 
+## 1.19.2
+
+### Patch Changes
+
+- Updated dependencies [[`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c)]:
+  - @ifc-lite/data@7.0.0
+
 ## 1.19.1
 
 ### Patch Changes

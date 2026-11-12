@@ -1,5 +1,22 @@
 # @ifc-lite/ids-agent
 
+## 0.3.0
+
+### Minor Changes
+
+- [#9534](https://github.com/LTplus-AG/ifc-lite/pull/9534) [`67519f8`](https://github.com/LTplus-AG/ifc-lite/commit/67519f89ef51b53ae6bd1677bec9fd0ef29773f4) Thanks [@louistrue](https://github.com/louistrue)! - Add `createWorkerRpc` to `@ifc-lite/wasm-lifecycle`: one request/response client with a dead latch (the first worker `error`, `messageerror`, missed deadline, failed start or `dispose()` rejects everything pending and every later call), cleanup when a `postMessage` throws, clamped deadlines, abort support and an init handshake. The point-cloud decode worker, the re-mesh client, the IDS agent's worker model bridge and the embed SDK now use it instead of their own copies.
+  
+  `createWorkerModelBridge` no longer leaves a call made after `dispose()` waiting forever: it rejects at once. Its new `watchErrors` option makes a worker crash or an unreadable message reject every pending and later call. A model-bridge or embed command whose `postMessage` throws no longer leaves a timer and a pending entry behind.
+
+### Patch Changes
+
+- Updated dependencies [[`d23dc72`](https://github.com/LTplus-AG/ifc-lite/commit/d23dc7247717cda9a2cd357ab052a7fa742d3ddd), [`23f2f05`](https://github.com/LTplus-AG/ifc-lite/commit/23f2f0562aa2c60d7114769b39431d73d5661f02), [`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c), [`353d056`](https://github.com/LTplus-AG/ifc-lite/commit/353d0569469242c92b709c7ee21a10d3de342e4b), [`67519f8`](https://github.com/LTplus-AG/ifc-lite/commit/67519f89ef51b53ae6bd1677bec9fd0ef29773f4)]:
+  - @ifc-lite/ai@0.2.1
+  - @ifc-lite/ids-authoring@0.3.5
+  - @ifc-lite/data@7.0.0
+  - @ifc-lite/wasm-lifecycle@0.3.0
+  - @ifc-lite/ids@3.4.5
+
 ## 0.2.11
 
 ### Patch Changes

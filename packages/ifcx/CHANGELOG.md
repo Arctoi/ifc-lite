@@ -1,5 +1,14 @@
 # @ifc-lite/ifcx
 
+## 4.6.1
+
+### Patch Changes
+
+- Updated dependencies [[`b64317e`](https://github.com/LTplus-AG/ifc-lite/commit/b64317e8f60788b1c1b2b103a9ee279e41adfca7), [`94dc7b6`](https://github.com/LTplus-AG/ifc-lite/commit/94dc7b6920513087abc48e573884ec9e02c523a4), [`5b881f3`](https://github.com/LTplus-AG/ifc-lite/commit/5b881f35e0dee96e34aaa6a47c260c90d4c29b31), [`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c), [`e4c95a6`](https://github.com/LTplus-AG/ifc-lite/commit/e4c95a6ccde8eaa013810c46bfa6dcc2ddbc4186), [`11c5359`](https://github.com/LTplus-AG/ifc-lite/commit/11c53595dab256d758e8c3af8c944c3c01279be8), [`67519f8`](https://github.com/LTplus-AG/ifc-lite/commit/67519f89ef51b53ae6bd1677bec9fd0ef29773f4), [`0f57524`](https://github.com/LTplus-AG/ifc-lite/commit/0f57524cfe347d29d68f53df7fc97f0b1f80d61a), [`cc5dcbd`](https://github.com/LTplus-AG/ifc-lite/commit/cc5dcbd4ee6cf35d624b0247edbb89ef35381c6e), [`a326e91`](https://github.com/LTplus-AG/ifc-lite/commit/a326e919aeaa416eeeaca15f698eb8117b923a4f), [`1ba591b`](https://github.com/LTplus-AG/ifc-lite/commit/1ba591b8b8ca2e232a49c000e285dca154749432)]:
+  - @ifc-lite/mutations@4.0.0
+  - @ifc-lite/data@7.0.0
+  - @ifc-lite/pointcloud@0.15.0
+
 ## 4.6.0
 
 ### Minor Changes

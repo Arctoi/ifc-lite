@@ -1,5 +1,14 @@
 # @ifc-lite/ids-authoring
 
+## 0.3.5
+
+### Patch Changes
+
+- [#9663](https://github.com/LTplus-AG/ifc-lite/pull/9663) [`23f2f05`](https://github.com/LTplus-AG/ifc-lite/commit/23f2f0562aa2c60d7114769b39431d73d5661f02) Thanks [@louistrue](https://github.com/louistrue)! - IDS Studio: picking a property's data type after entering its value now saves the value with the data type's XSD base. A list of 1 to 5 typed before choosing IFCINTEGER was saved as `xs:restriction base="xs:string"`; it is now `xs:integer`. Some values keep their old base, for example text under an integer type or a pattern. A list like this already saved as `xs:string` under IFCINTEGER shows the IDSL-VAL-002 warning, and its quick fix sets `xs:integer`. `@ifc-lite/ids-authoring` exports the check as `rebaseRestriction`.
+- Updated dependencies [[`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c)]:
+  - @ifc-lite/data@7.0.0
+  - @ifc-lite/ids@3.4.5
+
 ## 0.3.4
 
 ### Patch Changes

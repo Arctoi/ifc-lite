@@ -1,5 +1,11 @@
 # @ifc-lite/source-dalux
 
+## 0.4.2
+
+### Patch Changes
+
+- [#8647](https://github.com/LTplus-AG/ifc-lite/pull/8647) [`ad55253`](https://github.com/LTplus-AG/ifc-lite/commit/ad552530fcf6e4105bb283ee680865b1723fb361) Thanks [@bruadam](https://github.com/bruadam)! - Keep revision-index cache entries scoped to their API client, retry incomplete reads with fresh version-set pins, and use the first valid file timestamp. Project histories beyond the bounded sweep are explicitly incomplete instead of presenting an arbitrary subset as complete.
+
 ## 0.4.1
 
 ### Patch Changes

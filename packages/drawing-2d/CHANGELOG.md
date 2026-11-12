@@ -1,5 +1,17 @@
 # @ifc-lite/drawing-2d
 
+## 5.1.0
+
+### Minor Changes
+
+- [#9464](https://github.com/LTplus-AG/ifc-lite/pull/9464) [`8873f74`](https://github.com/LTplus-AG/ifc-lite/commit/8873f74607966a9b6be451ac8c7bc7f711b092d4) Thanks [@louistrue](https://github.com/louistrue)! - Section cut polygons now carry the `IfcMaterial` of the layer they cut (`DrawingPolygon.materialId`, from `MeshData.materialId`), so a consumer can hatch or fill a cut by material. Two layers of the same colour but different materials now reconstruct as separate polygons, each with its material, and get the opaque layer base like any multi-layer cut. `materialId` shares the express-id space with `entityId`, so in a federated session it resolves the same way.
+
+### Patch Changes
+
+- [#9458](https://github.com/LTplus-AG/ifc-lite/pull/9458) [`679df97`](https://github.com/LTplus-AG/ifc-lite/commit/679df97a0e8fc21997eac93c065797a93bee6b62) Thanks [@louistrue](https://github.com/louistrue)! - Keep valid elevation projection lines when the section plane cuts only a small part of the model. Projection depth and visibility determine the lines shown; the extent of the cut no longer rejects longer facade edges.
+- Updated dependencies [[`aca42e7`](https://github.com/LTplus-AG/ifc-lite/commit/aca42e7780691e2b6325e77ada6736233a739b1e), [`28d08de`](https://github.com/LTplus-AG/ifc-lite/commit/28d08de68add73c94d99f57879cd3e1f0c2827b3), [`c8fb366`](https://github.com/LTplus-AG/ifc-lite/commit/c8fb36659a84574f83240abaa2e61dfe967fdaa3), [`05c5553`](https://github.com/LTplus-AG/ifc-lite/commit/05c55534daaad7d96265e7cfc5fa246f81aa8b73), [`0d85a69`](https://github.com/LTplus-AG/ifc-lite/commit/0d85a693a5245da8f05a7e257fa44de94158f2c5), [`354a85d`](https://github.com/LTplus-AG/ifc-lite/commit/354a85d6cf4182c874bbd302bb6329dbf31f70ca), [`6ec3730`](https://github.com/LTplus-AG/ifc-lite/commit/6ec373081daff0b0455a596e0c3d49c6058bb331), [`8ec8262`](https://github.com/LTplus-AG/ifc-lite/commit/8ec82628d0563497ee09aba60a0f961c66c241d6), [`281bd10`](https://github.com/LTplus-AG/ifc-lite/commit/281bd10fb6b687f342c2bff3561e81f3b595ed8b), [`019d9b2`](https://github.com/LTplus-AG/ifc-lite/commit/019d9b2e398d0172c44f07a391918ae26708b1cf), [`353d056`](https://github.com/LTplus-AG/ifc-lite/commit/353d0569469242c92b709c7ee21a10d3de342e4b), [`67519f8`](https://github.com/LTplus-AG/ifc-lite/commit/67519f89ef51b53ae6bd1677bec9fd0ef29773f4), [`1ba591b`](https://github.com/LTplus-AG/ifc-lite/commit/1ba591b8b8ca2e232a49c000e285dca154749432)]:
+  - @ifc-lite/geometry@8.2.0
+
 ## 5.0.0
 
 ### Major Changes

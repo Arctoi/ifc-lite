@@ -1,5 +1,13 @@
 # @ifc-lite/data
 
+## 7.0.0
+
+### Major Changes
+
+- [#9461](https://github.com/LTplus-AG/ifc-lite/pull/9461) [`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c) Thanks [@louistrue](https://github.com/louistrue)! - Typed STEP attribute markers also accept positive integer arrays for `IfcLineIndex` and `IfcArcIndex`, preserving IFC4 indexed-polycurve segments when copying a file element with its own shape. Invalid segment aggregates refuse export.
+  
+  Breaking type change: code reading `value.typed.value` must now narrow arrays before treating the payload as a scalar. For scalar-only consumers, use `!Array.isArray(value.typed.value)` before reading it as `string | number | boolean`.
+
 ## 6.4.0
 
 ### Minor Changes

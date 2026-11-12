@@ -1,5 +1,13 @@
 # @ifc-lite/ai
 
+## 0.2.1
+
+### Patch Changes
+
+- [#9541](https://github.com/LTplus-AG/ifc-lite/pull/9541) [`d23dc72`](https://github.com/LTplus-AG/ifc-lite/commit/d23dc7247717cda9a2cd357ab052a7fa742d3ddd) Thanks [@louistrue](https://github.com/louistrue)! - Normalize tool-turn timeout delays with the same explicit timer range used by model requests, including invalid and overflowing inputs.
+- Updated dependencies [[`b64317e`](https://github.com/LTplus-AG/ifc-lite/commit/b64317e8f60788b1c1b2b103a9ee279e41adfca7), [`41a22de`](https://github.com/LTplus-AG/ifc-lite/commit/41a22de54b9e0a44340b7de08cfe878511bc7acd), [`94dc7b6`](https://github.com/LTplus-AG/ifc-lite/commit/94dc7b6920513087abc48e573884ec9e02c523a4), [`fc03027`](https://github.com/LTplus-AG/ifc-lite/commit/fc0302759de14482ad4cfa1a4c6d68666d296b49), [`d9bf99e`](https://github.com/LTplus-AG/ifc-lite/commit/d9bf99efb34c77cf9f2dab2c1d42d91dc62f1a85), [`dded228`](https://github.com/LTplus-AG/ifc-lite/commit/dded228fd11fa6a7c514be1f6525f9b3906a0a7c), [`11c5359`](https://github.com/LTplus-AG/ifc-lite/commit/11c53595dab256d758e8c3af8c944c3c01279be8), [`235d679`](https://github.com/LTplus-AG/ifc-lite/commit/235d67987352f8aeceea1fb4eefebca0aec2bca5), [`99e0b87`](https://github.com/LTplus-AG/ifc-lite/commit/99e0b874ac286aa0c9b4f9a27aa2adea32e6465c), [`a326e91`](https://github.com/LTplus-AG/ifc-lite/commit/a326e919aeaa416eeeaca15f698eb8117b923a4f)]:
+  - @ifc-lite/export@4.14.0
+
 ## 0.2.0
 
 ### Minor Changes
