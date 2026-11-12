@@ -984,7 +984,7 @@ function getterName(constName: string): string {
  * One table as the generated module carries it: the value encoded by
  * `../src/ifc-schema/table-codec.ts`, a getter that decodes it on first call,
  * and the exported constant (decoded on load; `@__PURE__` so a bundle that
- * never reads it drops it).
+ * never reads it drops it; its `eagerSchemaTable` marker shows where one was kept).
  */
 function tableModuleSection(constName: string, typeName: string, value: unknown): string {
   const getter = getterName(constName);
@@ -1001,12 +1001,12 @@ function tableModuleSection(constName: string, typeName: string, value: unknown)
     `  return ${cache};`,
     '}',
     '',
-    `export const ${constName}: ${typeName} = /* @__PURE__ */ ${getter}();`,
+    `export const ${constName}: ${typeName} = /* @__PURE__ */ eagerSchemaTable('ifc-lite-eager-table:${constName}', ${getter});`,
     '',
   ].join('\n');
 }
 
-const DECODER_IMPORT = "import { decodeSchemaTable } from '../table-codec.js';\n";
+const DECODER_IMPORT = "import { decodeSchemaTable, eagerSchemaTable } from '../table-codec.js';\n";
 
 function emitEntities(
   classes: Record<IfcVersion, ClassInfo[]>,
