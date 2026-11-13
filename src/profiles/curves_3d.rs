@@ -447,19 +447,18 @@ impl ProfileProcessor {
                     };
                     let arc_base =
                         (arc_estimate / std::f64::consts::FRAC_PI_2 * 8.0).ceil() as usize;
-                    let by_chord = crate::tessellation::circumradius(
+                    // A large radius also keeps the chords within tolerance,
+                    // over the sweep the arc really takes through `mid`.
+                    let by_chord = crate::tessellation::arc_through(
                         [start.x, start.y, start.z],
                         [mid.x, mid.y, mid.z],
                         [end.x, end.y, end.z],
                     )
-                    .map_or(0, |radius| {
-                        crate::tessellation::chord_segments(
-                            radius * decoder.length_unit_scale(),
-                            arc_estimate,
-                        )
+                    .map_or(0, |(radius, sweep)| {
+                        crate::tessellation::chord_segments(radius * decoder.length_unit_scale(), sweep)
                     });
                     let num_segments = scale_segments(arc_base, 4, 16, self.quality())
-                        .max(scale_segments(by_chord, 0, 128, self.quality()));
+                        .max(scale_segments(by_chord, 0, 512, self.quality()));
                     let arc_points = approximate_arc_3pt_3d(start, mid, end, num_segments);
                     for pt in arc_points {
                         if !same_point_3d(result.last(), &pt) {

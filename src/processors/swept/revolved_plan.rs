@@ -108,15 +108,22 @@ pub(super) fn lower(
     // A profile point far from the axis sweeps a large arc: the angular
     // floors below would leave its chords off the curve (a 10 m curved beam
     // at 15 degrees per step misses it by 86 mm), so take enough steps to
-    // keep the farthest point within the chord tolerance too.
+    // keep the farthest point within the chord tolerance too. Its distance
+    // from the axis includes the axis Location's height above the profile
+    // plane, which is revolved as authored. The extra steps stay within the
+    // sweep vertex budget, so a solid the floors admit is never refused.
+    let lift = axis_location.z * axis_location.z;
     let reach = regions
         .iter()
         .flat_map(|region| region.outer.iter())
         .map(|p| {
-            ((p.x - axis_location.x) * axis_direction.y - (p.y - axis_location.y) * axis_direction.x)
-                .abs()
+            let across = (p.x - axis_location.x) * axis_direction.y
+                - (p.y - axis_location.y) * axis_direction.x;
+            (across * across + lift).sqrt()
         })
         .fold(0.0_f64, f64::max);
+    let ring = regions.iter().map(crate::profiles::region_points).sum::<usize>().max(1);
+    let budget = (crate::profiles::MAX_SWEEP_VERTICES / ring).saturating_sub(1);
     let by_chord = crate::tessellation::chord_segments(
         reach * decoder.length_unit_scale(),
         if full_circle { std::f64::consts::TAU } else { angle },
@@ -125,10 +132,12 @@ pub(super) fn lower(
     // partial arc. Both scaled by quality; the high upper bound preserves
     // the original uncapped partial-arc count at Medium.
     let segments = if full_circle {
-        scale_segments(24, 8, 96, quality).max(scale_segments(by_chord, 0, 512, quality))
+        scale_segments(24, 8, 96, quality)
+            .max(scale_segments(by_chord, 0, 512, quality).min(budget))
     } else {
         let base = (angle.abs() / std::f64::consts::PI * 12.0).ceil() as usize;
-        scale_segments(base.max(by_chord), 8, 4096, quality)
+        scale_segments(base, 8, 4096, quality)
+            .max(scale_segments(base.max(by_chord), 8, 4096, quality).min(budget))
     };
 
     // Every ring point is placed once per step: refuse a revolution of
