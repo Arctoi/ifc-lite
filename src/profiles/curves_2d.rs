@@ -129,22 +129,10 @@ impl ProfileProcessor {
         // within budget. Bounded so a mis-resolved unit can't explode the count.
         let arc_angle = (end_angle - start_angle).abs();
         let by_angle = (arc_angle / std::f64::consts::FRAC_PI_2 * 8.0).ceil() as usize;
-        let by_chord = {
-            use crate::math::tol::CHORD_TOL_M;
-            let r_eff = radius.abs().max(radius2.abs());
-            let radius_m = r_eff * decoder.length_unit_scale();
-            if radius_m > CHORD_TOL_M {
-                let rel = (CHORD_TOL_M / radius_m).clamp(1e-9, 0.5);
-                let max_step = 2.0 * (1.0 - rel).acos();
-                if max_step > 1e-9 {
-                    (arc_angle / max_step).ceil() as usize
-                } else {
-                    0
-                }
-            } else {
-                0
-            }
-        };
+        let by_chord = crate::tessellation::chord_segments(
+            radius.abs().max(radius2.abs()) * decoder.length_unit_scale(),
+            arc_angle,
+        );
         // Profile arc: historical chord-adaptive density at Medium+ (never finer
         // — denser caps only add earcut bridge slivers), coarser below Medium so
         // large channel/angle fillets don't dominate on preview levels.
@@ -357,7 +345,24 @@ impl ProfileProcessor {
                         // density; below Medium it coarsens.
                         let arc_base =
                             (arc_estimate / std::f64::consts::FRAC_PI_2 * 8.0).ceil() as usize;
-                        let num_segments = self.quality().profile_arc_segments(arc_base, 4).min(16);
+                        // A large-radius arc also keeps its chords within
+                        // tolerance of the curve (curved walls and slabs).
+                        let by_chord = crate::tessellation::circumradius(
+                            [start.x, start.y, 0.0],
+                            [mid.x, mid.y, 0.0],
+                            [end.x, end.y, 0.0],
+                        )
+                        .map_or(0, |radius| {
+                            crate::tessellation::chord_segments(
+                                radius * decoder.length_unit_scale(),
+                                arc_estimate,
+                            )
+                        });
+                        let num_segments = self
+                            .quality()
+                            .profile_arc_segments(arc_base, 4)
+                            .min(16)
+                            .max(self.quality().profile_arc_segments(by_chord, 0).min(128));
                         let arc_points = self.approximate_arc_3pt(start, mid, end, num_segments);
                         for pt in arc_points {
                             if result_points.last() != Some(&pt) {
