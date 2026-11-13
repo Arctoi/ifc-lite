@@ -187,6 +187,44 @@ impl TessellationQuality {
     }
 }
 
+/// Segments that keep a circular arc of `radius_m` metres within
+/// [`CHORD_TOL_M`](crate::math::tol::CHORD_TOL_M) of its chords over
+/// `arc_angle` radians; 0 for a radius at or below the tolerance or a
+/// non-finite input. The angular floors used for arcs are independent of the
+/// radius, so a large arc collapses to a coarse polyline (ISSUE_129: a
+/// 12.5 m arc missed its curve by 35 mm). Call sites take the larger of
+/// their floor and this, under their own cap.
+pub(crate) fn chord_segments(radius_m: f64, arc_angle: f64) -> usize {
+    use crate::math::tol::CHORD_TOL_M;
+    // `!(r > tol)` also turns a NaN radius away.
+    if !(radius_m > CHORD_TOL_M) || !arc_angle.is_finite() {
+        return 0;
+    }
+    let rel = (CHORD_TOL_M / radius_m).clamp(1e-9, 0.5);
+    let max_step = 2.0 * (1.0 - rel).acos();
+    if max_step > 1e-9 {
+        (arc_angle.abs() / max_step).ceil() as usize
+    } else {
+        0
+    }
+}
+
+/// Radius of the circle through three points, `None` when they are
+/// (nearly) collinear or coincide.
+pub(crate) fn circumradius(a: [f64; 3], b: [f64; 3], c: [f64; 3]) -> Option<f64> {
+    let sub = |p: [f64; 3], q: [f64; 3]| [p[0] - q[0], p[1] - q[1], p[2] - q[2]];
+    let norm = |v: [f64; 3]| (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
+    let (ab, ac, bc) = (sub(b, a), sub(c, a), sub(c, b));
+    let cross = [
+        ab[1] * ac[2] - ab[2] * ac[1],
+        ab[2] * ac[0] - ab[0] * ac[2],
+        ab[0] * ac[1] - ab[1] * ac[0],
+    ];
+    let twice_area = norm(cross);
+    let product = norm(ab) * norm(ac) * norm(bc);
+    (twice_area > 1e-12 * product.max(f64::MIN_POSITIVE)).then(|| product / (2.0 * twice_area))
+}
+
 /// Outer radius (metres) up to which a swept disk counts as a thin rod for
 /// [`TessellationQuality::swept_disk_segments`]: 40 mm diameter covers the
 /// common reinforcement bar sizes.

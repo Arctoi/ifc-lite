@@ -105,14 +105,30 @@ pub(super) fn lower(
     }
 
     let full_circle = angle.abs() >= std::f64::consts::PI * 1.99;
+    // A profile point far from the axis sweeps a large arc: the angular
+    // floors below would leave its chords off the curve (a 10 m curved beam
+    // at 15 degrees per step misses it by 86 mm), so take enough steps to
+    // keep the farthest point within the chord tolerance too.
+    let reach = regions
+        .iter()
+        .flat_map(|region| region.outer.iter())
+        .map(|p| {
+            ((p.x - axis_location.x) * axis_direction.y - (p.y - axis_location.y) * axis_direction.x)
+                .abs()
+        })
+        .fold(0.0_f64, f64::max);
+    let by_chord = crate::tessellation::chord_segments(
+        reach * decoder.length_unit_scale(),
+        if full_circle { std::f64::consts::TAU } else { angle },
+    );
     // 24 segments for a full revolve at Medium; ~12 per 180° (min 8) for a
     // partial arc. Both scaled by quality; the high upper bound preserves
     // the original uncapped partial-arc count at Medium.
     let segments = if full_circle {
-        scale_segments(24, 8, 96, quality)
+        scale_segments(24, 8, 96, quality).max(scale_segments(by_chord, 0, 512, quality))
     } else {
         let base = (angle.abs() / std::f64::consts::PI * 12.0).ceil() as usize;
-        scale_segments(base, 8, 4096, quality)
+        scale_segments(base.max(by_chord), 8, 4096, quality)
     };
 
     // Every ring point is placed once per step: refuse a revolution of
