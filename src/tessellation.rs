@@ -189,9 +189,10 @@ impl TessellationQuality {
 
 /// Segments that keep a circular arc of `radius_m` metres within
 /// [`CHORD_TOL_M`](crate::math::tol::CHORD_TOL_M) of its chords over
-/// `arc_angle` radians; 0 for a radius at or below the tolerance or a
-/// non-finite input. The angular floors used for arcs are independent of the
-/// radius, so a large arc collapses to a coarse polyline (ISSUE_129: a
+/// `arc_angle` radians; 0 for a radius at or below the tolerance (or NaN) or
+/// a non-finite angle. An infinite radius gives an unbounded count, which
+/// every caller caps. The angular floors used for arcs are independent of
+/// the radius, so a large arc collapses to a coarse polyline (ISSUE_129: a
 /// 12.5 m arc missed its curve by 35 mm). Call sites take the larger of
 /// their floor and this, under their own cap.
 pub(crate) fn chord_segments(radius_m: f64, arc_angle: f64) -> usize {
@@ -209,20 +210,38 @@ pub(crate) fn chord_segments(radius_m: f64, arc_angle: f64) -> usize {
     }
 }
 
-/// Radius of the circle through three points, `None` when they are
-/// (nearly) collinear or coincide.
-pub(crate) fn circumradius(a: [f64; 3], b: [f64; 3], c: [f64; 3]) -> Option<f64> {
+/// Radius and sweep (radians, in `(0, 2 pi)`) of the circular arc that runs
+/// from `a` through `b` to `c`, as an `IfcArcIndex` defines it: the middle
+/// point may sit anywhere on the arc, so a major arc is measured as one.
+/// `None` when the points are (nearly) collinear or coincide; the test is on
+/// the sine of the angle at `a`, so it does not depend on the length unit.
+pub(crate) fn arc_through(a: [f64; 3], b: [f64; 3], c: [f64; 3]) -> Option<(f64, f64)> {
     let sub = |p: [f64; 3], q: [f64; 3]| [p[0] - q[0], p[1] - q[1], p[2] - q[2]];
-    let norm = |v: [f64; 3]| (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-    let (ab, ac, bc) = (sub(b, a), sub(c, a), sub(c, b));
-    let cross = [
-        ab[1] * ac[2] - ab[2] * ac[1],
-        ab[2] * ac[0] - ab[0] * ac[2],
-        ab[0] * ac[1] - ab[1] * ac[0],
-    ];
-    let twice_area = norm(cross);
-    let product = norm(ab) * norm(ac) * norm(bc);
-    (twice_area > 1e-12 * product.max(f64::MIN_POSITIVE)).then(|| product / (2.0 * twice_area))
+    let dot = |p: [f64; 3], q: [f64; 3]| p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
+    let cross = |p: [f64; 3], q: [f64; 3]| {
+        [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]]
+    };
+    let (ab, ac) = (sub(b, a), sub(c, a));
+    let normal = cross(ab, ac);
+    let twice_area = dot(normal, normal).sqrt();
+    if !(twice_area > 1e-9 * dot(ab, ab).sqrt() * dot(ac, ac).sqrt()) {
+        return None;
+    }
+    // Circumcentre: a + (|ac|^2 (n x ab) + |ab|^2 (ac x n)) / (2 |n|^2).
+    let (n_ab, ac_n) = (cross(normal, ab), cross(ac, normal));
+    let k = 0.5 / (twice_area * twice_area);
+    let centre: [f64; 3] = std::array::from_fn(|i| {
+        a[i] + k * (dot(ac, ac) * n_ab[i] + dot(ab, ab) * ac_n[i])
+    });
+    let start = sub(a, centre);
+    let end = sub(c, centre);
+    // a -> b -> c winds counter-clockwise about `normal`, so the arc through
+    // b is the counter-clockwise sweep from a to c about it.
+    let unit = normal.map(|v| v / twice_area);
+    let sweep = dot(unit, cross(start, end)).atan2(dot(start, end));
+    let sweep = if sweep <= 0.0 { sweep + std::f64::consts::TAU } else { sweep };
+    let radius = dot(start, start).sqrt();
+    (radius.is_finite() && sweep.is_finite()).then_some((radius, sweep))
 }
 
 /// Outer radius (metres) up to which a swept disk counts as a thin rod for
