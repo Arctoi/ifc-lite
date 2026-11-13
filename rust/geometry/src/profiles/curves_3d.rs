@@ -96,8 +96,14 @@ impl ProfileProcessor {
 
         let (center, x_axis, y_axis) = self.read_conic_placement_3d(curve, decoder)?;
 
-        // Generate circle points in 3D (24 at Medium, scaled by quality)
-        let segments = scale_segments(24, 8, 96, self.quality());
+        // Generate circle points in 3D (24 at Medium, scaled by quality), more
+        // when a large radius would leave the chords off the curve.
+        let by_chord = crate::tessellation::chord_segments(
+            radius * decoder.length_unit_scale(),
+            std::f64::consts::TAU,
+        );
+        let segments = scale_segments(24, 8, 96, self.quality())
+            .max(scale_segments(by_chord, 0, 512, self.quality()));
         let mut points = Vec::with_capacity(segments + 1);
 
         for i in 0..=segments {
@@ -441,7 +447,19 @@ impl ProfileProcessor {
                     };
                     let arc_base =
                         (arc_estimate / std::f64::consts::FRAC_PI_2 * 8.0).ceil() as usize;
-                    let num_segments = scale_segments(arc_base, 4, 16, self.quality());
+                    let by_chord = crate::tessellation::circumradius(
+                        [start.x, start.y, start.z],
+                        [mid.x, mid.y, mid.z],
+                        [end.x, end.y, end.z],
+                    )
+                    .map_or(0, |radius| {
+                        crate::tessellation::chord_segments(
+                            radius * decoder.length_unit_scale(),
+                            arc_estimate,
+                        )
+                    });
+                    let num_segments = scale_segments(arc_base, 4, 16, self.quality())
+                        .max(scale_segments(by_chord, 0, 128, self.quality()));
                     let arc_points = approximate_arc_3pt_3d(start, mid, end, num_segments);
                     for pt in arc_points {
                         if !same_point_3d(result.last(), &pt) {

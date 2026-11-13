@@ -254,22 +254,10 @@ impl ProfileProcessor {
     ) -> Vec<Point3<f64>> {
         let arc_angle = (end_angle - start_angle).abs();
         let by_angle = (arc_angle / std::f64::consts::FRAC_PI_2 * 8.0).ceil() as usize;
-        let by_chord = {
-            use crate::math::tol::CHORD_TOL_M;
-            let r_eff = radius.abs().max(radius2.abs());
-            let radius_m = r_eff * decoder.length_unit_scale();
-            if radius_m > CHORD_TOL_M {
-                let rel = (CHORD_TOL_M / radius_m).clamp(1e-9, 0.5);
-                let max_step = 2.0 * (1.0 - rel).acos();
-                if max_step > 1e-9 {
-                    (arc_angle / max_step).ceil() as usize
-                } else {
-                    0
-                }
-            } else {
-                0
-            }
-        };
+        let by_chord = crate::tessellation::chord_segments(
+            radius.abs().max(radius2.abs()) * decoder.length_unit_scale(),
+            arc_angle,
+        );
         let num_segments = self
             .quality()
             .profile_arc_segments(by_angle.max(by_chord), 2)
