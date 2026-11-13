@@ -18,7 +18,7 @@ mod directrix;
 mod outline;
 mod placement;
 mod regions;
-pub(crate) use regions::{check_sweep_vertices, region_points, sweeps_new_rings};
+pub(crate) use regions::{check_sweep_vertices, region_points, sweeps_new_rings, MAX_SWEEP_VERTICES};
 mod shapes;
 mod simplify;
 mod steel_shapes;
