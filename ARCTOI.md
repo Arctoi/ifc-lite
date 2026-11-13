@@ -12,4 +12,4 @@ MPL-2.0.
 2. Large-radius arcs keep their chords within 0.5 mm of the curve: arcs in
    `IfcIndexedPolyCurve`, revolved solids and full circles used as 3D curves
    took fixed angular steps whatever their radius. With history on branch
-   `arctoi/arc-chord-tolerance` (commit c16e1dbe6).
+   `arctoi/arc-chord-tolerance` (commits c16e1dbe6 and f379806e8).
