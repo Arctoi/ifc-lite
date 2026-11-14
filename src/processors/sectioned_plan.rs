@@ -14,7 +14,8 @@ use crate::{
     profiles::ProfileProcessor,
     Error, Mesh, Result, TessellationQuality,
 };
-use ifc_lite_core::{slot, DecodedEntity, EntityDecoder};
+use crate::profile::Profile2D;
+use ifc_lite_core::{slot, DecodedEntity, EntityDecoder, IfcType};
 use nalgebra::Point3;
 
 #[derive(Debug, Clone)]
@@ -22,6 +23,8 @@ pub(crate) struct SectionedPlan {
     sections: Vec<Section>,
     rings_3d: Vec<Vec<Vec<Vec<Point3<f64>>>>>,
     frames: Vec<AlignmentFrame>,
+    /// An `IfcSectionedSurface`: open sections joined by strips, no caps.
+    open: bool,
 }
 
 pub(super) fn lower(
@@ -30,26 +33,37 @@ pub(super) fn lower(
     quality: TessellationQuality,
     profile_processor: &ProfileProcessor,
 ) -> Result<SectionedPlan> {
+    // IfcSectionedSurface lists its positions before its sections and lofts
+    // open cross profiles into a surface; the solid lofts closed areas.
+    let open = entity.ifc_type == IfcType::IfcSectionedSurface;
+    let (directrix_slot, sections_slot, positions_slot) = if open {
+        (
+            slot::IfcSectionedSurface::DIRECTRIX.index(),
+            slot::IfcSectionedSurface::CROSS_SECTIONS.index(),
+            slot::IfcSectionedSurface::CROSS_SECTION_POSITIONS.index(),
+        )
+    } else {
+        (
+            slot::IfcSectionedSolidHorizontal::DIRECTRIX.index(),
+            slot::IfcSectionedSolidHorizontal::CROSS_SECTIONS.index(),
+            slot::IfcSectionedSolidHorizontal::CROSS_SECTION_POSITIONS.index(),
+        )
+    };
+    let kind = &entity.ifc_type;
     let directrix_id = entity
-        .get_ref(slot::IfcSectionedSolidHorizontal::DIRECTRIX.index())
-        .ok_or_else(|| {
-            Error::geometry("IfcSectionedSolidHorizontal missing Directrix".to_string())
-        })?;
+        .get_ref(directrix_slot)
+        .ok_or_else(|| Error::geometry(format!("{kind} missing Directrix")))?;
 
     let sections_attr = entity
-        .get(slot::IfcSectionedSolidHorizontal::CROSS_SECTIONS.index())
-        .ok_or_else(|| {
-            Error::geometry("IfcSectionedSolidHorizontal missing CrossSections".to_string())
-        })?;
+        .get(sections_slot)
+        .ok_or_else(|| Error::geometry(format!("{kind} missing CrossSections")))?;
     let sections_list = sections_attr
         .as_list()
         .ok_or_else(|| Error::geometry("CrossSections must be a list".to_string()))?;
 
     let positions_attr = entity
-        .get(slot::IfcSectionedSolidHorizontal::CROSS_SECTION_POSITIONS.index())
-        .ok_or_else(|| {
-            Error::geometry("IfcSectionedSolidHorizontal missing CrossSectionPositions".to_string())
-        })?;
+        .get(positions_slot)
+        .ok_or_else(|| Error::geometry(format!("{kind} missing CrossSectionPositions")))?;
     let positions_list = positions_attr
         .as_list()
         .ok_or_else(|| Error::geometry("CrossSectionPositions must be a list".to_string()))?;
@@ -68,9 +82,10 @@ pub(super) fn lower(
         ));
     }
 
-    let fixed_axis_vertical = entity
-        .get_bool(slot::IfcSectionedSolidHorizontal::FIXED_AXIS_VERTICAL.index())
-        .unwrap_or(true);
+    let fixed_axis_vertical = open
+        || entity
+            .get_bool(slot::IfcSectionedSolidHorizontal::FIXED_AXIS_VERTICAL.index())
+            .unwrap_or(true);
 
     let directrix_entity = decoder.decode_by_id(directrix_id)?;
     let alignment = AlignmentCurve::parse(&directrix_entity, decoder)?;
@@ -87,11 +102,20 @@ pub(super) fn lower(
             Error::geometry("CrossSection must be an entity reference".to_string())
         })?;
         let sec_entity = decoder.decode_by_id(sec_id)?;
-        let section: Section = profile_processor
-            .process_regions(&sec_entity, decoder, quality)?
-            .into_iter()
-            .filter_map(clean_region)
-            .collect();
+        let section: Section = if open {
+            let mut line = super::sectioned_open::open_cross_profile(&sec_entity, decoder)?;
+            line.dedup_by(|b, a| (*b - *a).norm_squared() < 1e-20);
+            if line.len() < 2 {
+                continue;
+            }
+            vec![Profile2D { outer: line, holes: vec![] }]
+        } else {
+            profile_processor
+                .process_regions(&sec_entity, decoder, quality)?
+                .into_iter()
+                .filter_map(clean_region)
+                .collect()
+        };
         if section.is_empty() {
             continue; // Skip degenerate profiles.
         }
@@ -110,13 +134,15 @@ pub(super) fn lower(
                 .to_string(),
         ));
     }
-    sample(
+    let mut plan = sample(
         authored,
         alignment.as_ref(),
         fixed_axis_vertical,
         quality,
         entity.id,
-    )
+    )?;
+    plan.open = open;
+    Ok(plan)
 }
 
 fn sample(
@@ -189,6 +215,7 @@ fn sample(
         sections: samples.into_iter().map(|(section, _)| section).collect(),
         rings_3d,
         frames,
+        open: false,
     })
 }
 
@@ -198,7 +225,20 @@ impl SectionedPlan {
             sections,
             rings_3d,
             frames,
+            open,
         } = self;
+        if *open {
+            // Strips between consecutive sections with the same break
+            // points; an authored change of point count leaves a gap.
+            let mut mesh = Mesh::new();
+            for i in 1..sections.len() {
+                if same_topology(&sections[i - 1], &sections[i]) {
+                    let (prev, this) = (&rings_3d[i - 1][0][0], &rings_3d[i][0][0]);
+                    super::sectioned_open::emit_strip(&mut mesh, prev, this, frames[i].up);
+                }
+            }
+            return Ok(mesh);
+        }
         // Build the mesh: start cap, side walls between consecutive
         // rings, end cap. Topology change (varying region or ring vertex
         // counts between adjacent samples) closes the current sub-sweep

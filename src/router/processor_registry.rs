@@ -57,7 +57,7 @@ processor_families! { schema;
     SweptDisk => [IfcSweptDiskSolid] => SweptDiskSolidProcessor::new(schema.clone());
     RevolvedAreaSolid => [IfcRevolvedAreaSolid] => RevolvedAreaSolidProcessor::new(schema.clone());
     SweptArea => [IfcSurfaceCurveSweptAreaSolid, IfcFixedReferenceSweptAreaSolid] => SurfaceCurveSweptAreaSolidProcessor::new(schema.clone());
-    SectionedSolid => [IfcSectionedSolidHorizontal] => SectionedSolidHorizontalProcessor::new(schema.clone());
+    SectionedSolid => [IfcSectionedSolidHorizontal, IfcSectionedSurface] => SectionedSolidHorizontalProcessor::new(schema.clone());
     AdvancedBrep => [IfcAdvancedBrep, IfcAdvancedBrepWithVoids] => AdvancedBrepProcessor::new();
     BSplineSurface => [IfcBSplineSurfaceWithKnots, IfcRationalBSplineSurfaceWithKnots] => BSplineSurfaceProcessor::new();
     ShellSurfaceModel => [IfcShellBasedSurfaceModel] => ShellBasedSurfaceModelProcessor::new();
