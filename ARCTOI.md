@@ -16,4 +16,4 @@ MPL-2.0.
 3. IFC 4.3 `IfcSectionedSurface` (road and rail surfaces) with
    `IfcOpenCrossProfileDef` sections, and the `AdvancedSurface`
    representation type, are drawn. With history on branch
-   `arctoi/road-surfaces` (commit 7f582965c).
+   `arctoi/road-surfaces` (commits 7f582965c and c9d2f92a3).
