@@ -50,8 +50,8 @@ pub(crate) fn is_direct_body_representation(rep_type: &str) -> bool {
 
 /// Whether a near-origin element with this `RepresentationType` may cast a
 /// "no-shift" `(0,0,0)` RTC vote when the vertex probe can't cheaply read a
-/// coordinate. This is [`is_body_representation`] MINUS `"Surface3D"` —
-/// meshable does NOT imply RTC-votable.
+/// coordinate. This is [`is_body_representation`] MINUS `"Surface3D"` and
+/// IFC4x3 `"AdvancedSurface"` — meshable does NOT imply RTC-votable.
 ///
 /// A `Surface3D` rep (`IfcBSplineSurfaceWithKnots`, `IfcSectionedSurface`,
 /// trimmed/curve-bounded surfaces) keeps its geometry in absolute model-space
@@ -62,10 +62,11 @@ pub(crate) fn is_direct_body_representation(rep_type: &str) -> bool {
 /// large-coordinate solids, those origin votes drag the median to zero and/or
 /// exhaust the 50-sample budget, suppressing a legitimate rebase — the #1526
 /// curve-only pollution rebuilt via Surface3D. So Surface3D must ABSTAIN here,
-/// like a curve/axis rep. Scoped to RTC voting only: the meshing / void / layer
-/// paths still treat Surface3D as body geometry.
+/// like a curve/axis rep, and so must `AdvancedSurface`, the IFC4x3 type for
+/// the same surfaces. Scoped to RTC voting only: the meshing / void / layer
+/// paths still treat both as body geometry.
 pub(crate) fn is_rtc_votable_representation(rep_type: &str) -> bool {
-    rep_type != "Surface3D" && is_body_representation(rep_type)
+    !matches!(rep_type, "Surface3D" | "AdvancedSurface") && is_body_representation(rep_type)
 }
 
 /// The string that should drive body-representation filtering for an
