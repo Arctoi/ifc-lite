@@ -103,8 +103,10 @@ pub(super) fn lower(
         })?;
         let sec_entity = decoder.decode_by_id(sec_id)?;
         let section: Section = if open {
-            let mut line = super::sectioned_open::open_cross_profile(&sec_entity, decoder)?;
-            line.dedup_by(|b, a| (*b - *a).norm_squared() < 1e-20);
+            // Break points are kept even where a width is zero (a lane that
+            // starts from nothing), so consecutive sections still pair up
+            // point for point; the strip skips zero-width quads.
+            let line = super::sectioned_open::open_cross_profile(&sec_entity, decoder)?;
             if line.len() < 2 {
                 continue;
             }
@@ -129,9 +131,7 @@ pub(super) fn lower(
 
     if authored.len() < 2 {
         return Err(Error::geometry(
-            "IfcSectionedSolidHorizontal: <2 valid stations after filtering degenerate \
-             cross-sections — nothing to loft"
-                .to_string(),
+            format!("{kind}: <2 valid stations after filtering degenerate cross-sections — nothing to loft"),
         ));
     }
     let mut plan = sample(

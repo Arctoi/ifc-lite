@@ -40,7 +40,7 @@ const SOLID_Z: f64 = 100.0;
 /// (correctly) the element must ABSTAIN rather than vote its `(0,0,0)`
 /// placement. Numbered from a caller-supplied base so several can coexist
 /// without id collisions.
-fn surface3d_proxy(base: u32, guid: &str) -> String {
+fn surface3d_proxy(base: u32, guid: &str, rep_type: &str) -> String {
     let c0 = base;
     let c1 = base + 1;
     let c2 = base + 2;
@@ -59,7 +59,7 @@ fn surface3d_proxy(base: u32, guid: &str) -> String {
          #{c3}=IFCCARTESIANPOINT((1.,1.,0.));\n\
          #{bspline}=IFCBSPLINESURFACEWITHKNOTS(1,1,((#{c0},#{c1}),(#{c2},#{c3})),\
 .UNSPECIFIED.,.F.,.F.,.F.,(2,2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.);\n\
-         #{rep}=IFCSHAPEREPRESENTATION(#6,'Surface','Surface3D',(#{bspline}));\n\
+         #{rep}=IFCSHAPEREPRESENTATION(#6,'Surface','{rep_type}',(#{bspline}));\n\
          #{pds}=IFCPRODUCTDEFINITIONSHAPE($,$,(#{rep}));\n\
          #{pt}=IFCCARTESIANPOINT((0.,0.,0.));\n\
          #{ax}=IFCAXIS2PLACEMENT3D(#{pt},$,$);\n\
@@ -68,7 +68,7 @@ fn surface3d_proxy(base: u32, guid: &str) -> String {
     )
 }
 
-fn model() -> String {
+fn model(rep_type: &str) -> String {
     // Header + shared context/units. Six origin-placed Surface3D-only proxies
     // (a strict majority of the samples) followed by one tessellated solid at
     // large world coordinates with identity placement.
@@ -103,7 +103,7 @@ fn model() -> String {
     .iter()
     .enumerate()
     {
-        s.push_str(&surface3d_proxy(100 + (i as u32) * 20, guid));
+        s.push_str(&surface3d_proxy(100 + (i as u32) * 20, guid, rep_type));
     }
 
     // Tessellated solid (a small tetra-ish faceset) at the large anchor. Its
@@ -131,7 +131,18 @@ fn model() -> String {
 
 #[test]
 fn rtc_offset_survives_surface3d_origin_entities() {
-    let result = process_geometry(&model());
+    check_rtc_survives("Surface3D");
+}
+
+/// IFC4x3 names the same surfaces (`IfcSectionedSurface`, B-spline surfaces)
+/// `AdvancedSurface`; they must abstain from the vote too.
+#[test]
+fn rtc_offset_survives_advanced_surface_origin_entities() {
+    check_rtc_survives("AdvancedSurface");
+}
+
+fn check_rtc_survives(rep_type: &str) {
+    let result = process_geometry(&model(rep_type));
     let shift = result.metadata.coordinate_info.origin_shift;
 
     // The offset must anchor on the large-coordinate tessellated solid, NOT be

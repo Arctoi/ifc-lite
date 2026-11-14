@@ -125,14 +125,14 @@ impl GeometryRouter {
     /// True when the element carries at least one RTC-votable body shape or
     /// structural Face topology representation, as opposed to only
     /// curve/axis/footprint reps (e.g. an IfcAlignmentSegment) OR a `Surface3D`
-    /// rep whose coordinates the vertex probe cannot read. Used to decide
+    /// or `AdvancedSurface` rep whose coordinates the vertex probe cannot read. Used to decide
     /// whether an origin-placed element with no cheaply-samplable vertex may
     /// still cast a "no shift" (0,0,0) vote during RTC detection.
     ///
     /// NOTE: this selects [`Select::RtcVotable`], NOT
     /// [`is_body_representation`](super::is_body_representation) — the two
-    /// differ only in `Surface3D`, which is meshable but not RTC-votable (see
-    /// `is_rtc_votable_representation`; #1526).
+    /// differ only in `Surface3D` and `AdvancedSurface`, which are meshable but
+    /// not RTC-votable (see `is_rtc_votable_representation`; #1526).
     fn element_has_body_representation(
         &self,
         entity: &DecodedEntity,

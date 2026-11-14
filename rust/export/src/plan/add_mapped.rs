@@ -137,7 +137,7 @@ impl AddState<'_, '_> {
         let body_type = read("RepresentationType").is_none_or(|t| {
             [
                 "Body", "SweptSolid", "Brep", "CSG", "Clipping", "Tessellation", "MappedRepresentation", "SolidModel", "SurfaceModel", "Surface3D",
-                "AdvancedSweptSolid", "AdvancedBrep",
+                "AdvancedSweptSolid", "AdvancedBrep", "AdvancedSurface",
             ]
             .contains(&t.as_str())
         });
