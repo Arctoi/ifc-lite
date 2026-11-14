@@ -61,6 +61,8 @@ use nalgebra::{Point3, Vector3};
 mod sectioned_mesh;
 #[path = "sectioned_positions.rs"]
 mod sectioned_positions;
+#[path = "sectioned_open.rs"]
+mod sectioned_open;
 use crate::alignment_arc_length::ArcLengthMap;
 use sectioned_positions::PositionAlongDirectrix;
 
@@ -132,7 +134,7 @@ impl GeometryProcessor for SectionedSolidHorizontalProcessor {
     }
 
     fn supported_types(&self) -> Vec<IfcType> {
-        vec![IfcType::IfcSectionedSolidHorizontal]
+        vec![IfcType::IfcSectionedSolidHorizontal, IfcType::IfcSectionedSurface]
     }
 }
 

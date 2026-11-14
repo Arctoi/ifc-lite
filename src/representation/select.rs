@@ -35,6 +35,8 @@ pub(crate) fn is_body_representation(rep_type: &str) -> bool {
             | "Surface3D"
             | "AdvancedSweptSolid"
             | "AdvancedBrep"
+            // IFC4x3: sectioned and B-spline surfaces (IfcSectionedSurface).
+            | "AdvancedSurface"
     )
 }
 
