@@ -13,3 +13,7 @@ MPL-2.0.
    `IfcIndexedPolyCurve`, revolved solids and full circles used as 3D curves
    took fixed angular steps whatever their radius. With history on branch
    `arctoi/arc-chord-tolerance` (commits c16e1dbe6 and f379806e8).
+3. IFC 4.3 `IfcSectionedSurface` (road and rail surfaces) with
+   `IfcOpenCrossProfileDef` sections, and the `AdvancedSurface`
+   representation type, are drawn. With history on branch
+   `arctoi/road-surfaces` (commit 7f582965c).
