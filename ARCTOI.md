@@ -17,3 +17,8 @@ MPL-2.0.
    `IfcOpenCrossProfileDef` sections, and the `AdvancedSurface`
    representation type, are drawn. With history on branch
    `arctoi/road-surfaces` (commits 7f582965c and c9d2f92a3).
+4. Sectioned surfaces and solids at national-grid coordinates (SWEREF 99,
+   northings around 6.6e6 m) are rebased in f64 before the f32 mesh cast, and
+   vote for the large-coordinate offset with their directrix start; before,
+   their vertices snapped to the f32 grid (0.5 m at 6.6e6 m). With history on
+   branch `arctoi/sectioned-surface-rtc` (commit 5d2fa1541).
