@@ -64,7 +64,9 @@ pub(crate) fn is_direct_body_representation(rep_type: &str) -> bool {
 /// curve-only pollution rebuilt via Surface3D. So Surface3D must ABSTAIN here,
 /// like a curve/axis rep, and so must `AdvancedSurface`, the IFC4x3 type for
 /// the same surfaces. Scoped to RTC voting only: the meshing / void / layer
-/// paths still treat both as body geometry.
+/// paths still treat both as body geometry. It gates only that origin
+/// fallback: a surface whose vertex the probe does read (an
+/// `IfcSectionedSurface`, by its directrix start) votes its real position.
 pub(crate) fn is_rtc_votable_representation(rep_type: &str) -> bool {
     !matches!(rep_type, "Surface3D" | "AdvancedSurface") && is_body_representation(rep_type)
 }

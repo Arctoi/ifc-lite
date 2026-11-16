@@ -200,7 +200,8 @@ impl GeometryRouter {
 
     /// First vertex (raw file units, the item's own frame) of one non-mapped
     /// representation item, for the item kinds the RTC vote can read cheaply.
-    /// `None` for anything else, including `Surface3D` surfaces (#1526).
+    /// `None` for anything else, including B-spline and other `Surface3D` /
+    /// `AdvancedSurface` surfaces (#1526); sectioned surfaces are read.
     fn item_first_vertex(
         &self,
         item: &DecodedEntity,
@@ -228,6 +229,15 @@ impl GeometryRouter {
             // Structural topology
             IfcType::IfcFaceSurface | IfcType::IfcAdvancedFace => {
                 self.face_first_vertex(item, decoder)
+            }
+            // Sectioned sweeps: the directrix start, in the absolute
+            // coordinates the directrix carries. An `AdvancedSurface` road
+            // surface votes where it really sits, so a file of an alignment
+            // and its road surfaces gets an anchor on the road; without this
+            // it abstained (as a surface rep must when unread, #1526), and a
+            // sectioned solid at an origin placement voted (0,0,0).
+            IfcType::IfcSectionedSurface | IfcType::IfcSectionedSolidHorizontal => {
+                crate::processors::SectionedSolidHorizontalProcessor::first_vertex(item, decoder)
             }
             _ => None,
         }
