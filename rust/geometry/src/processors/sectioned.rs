@@ -54,7 +54,7 @@
 //! - IfcAlignmentCurve: IFC4x1 §8.7.3.10
 
 use crate::math::tol;
-use ifc_lite_core::{DecodedEntity, EntityDecoder, IfcSchema, IfcType};
+use ifc_lite_core::{slot, DecodedEntity, EntityDecoder, IfcSchema, IfcType};
 use nalgebra::{Point3, Vector3};
 
 #[path = "sectioned_mesh.rs"]
@@ -104,7 +104,38 @@ impl SectionedSolidHorizontalProcessor {
         decoder: &mut EntityDecoder,
         quality: TessellationQuality,
     ) -> Result<plan::SectionedPlan> {
-        plan::lower(entity, decoder, quality, &self.profile_processor)
+        self.lower_rebased(entity, decoder, quality, None)
+    }
+
+    /// [`Self::lower`] with the rings rebased by `rtc_file_units` (the model
+    /// RTC in file units, in the item's own frame) in f64, before any f32
+    /// narrowing.
+    pub(crate) fn lower_rebased(
+        &self,
+        entity: &DecodedEntity,
+        decoder: &mut EntityDecoder,
+        quality: TessellationQuality,
+        rtc_file_units: Option<(f64, f64, f64)>,
+    ) -> Result<plan::SectionedPlan> {
+        plan::lower(entity, decoder, quality, &self.profile_processor, rtc_file_units)
+    }
+
+    /// The directrix's start point (file units, the item's own frame) for
+    /// the router's raw-coordinate probes: the directrix carries the model's
+    /// absolute coordinates, so this is where the sweep sits for the RTC vote
+    /// and the rebase decision. `None` when the directrix is not one the
+    /// sweep follows (it then runs from the item origin along +Y).
+    pub(crate) fn first_vertex(
+        entity: &DecodedEntity,
+        decoder: &mut EntityDecoder,
+    ) -> Option<(f64, f64, f64)> {
+        // Directrix is attribute 0 of both IfcSectionedSolidHorizontal and
+        // IfcSectionedSurface.
+        let directrix_id = entity.get_ref(slot::IfcSectionedSurface::DIRECTRIX.index())?;
+        let directrix = decoder.decode_by_id(directrix_id).ok()?;
+        let start = AlignmentCurve::parse(&directrix, decoder).ok()??.evaluate(0.0).origin;
+        (start.x.is_finite() && start.y.is_finite() && start.z.is_finite())
+            .then_some((start.x, start.y, start.z))
     }
 }
 
@@ -119,8 +150,9 @@ impl GeometryProcessor for SectionedSolidHorizontalProcessor {
         quality: crate::TessellationQuality, rtc_file_units: Option<(f64, f64, f64)>)
         -> Option<crate::Result<crate::program::OwnedConstructor>> {
         use crate::program::constructor::Constructor;
-        if rtc_file_units.is_some() { return None; }
-        Some(self.lower(entity, decoder, quality).map(|plan| crate::program::OwnedConstructor::new(Constructor::SectionedSolid(plan))))
+        // The router offers an RTC frame only when the directrix start
+        // (`first_vertex`) is large; the plan then rebases in f64.
+        Some(self.lower_rebased(entity, decoder, quality, rtc_file_units).map(|plan| crate::program::OwnedConstructor::new(Constructor::SectionedSolid(plan))))
     }
 
     fn process(
@@ -131,6 +163,20 @@ impl GeometryProcessor for SectionedSolidHorizontalProcessor {
         quality: TessellationQuality,
     ) -> Result<Mesh> {
         self.lower(entity, decoder, quality)?.evaluate()
+    }
+
+    fn process_in_rtc_frame(
+        &self,
+        entity: &DecodedEntity,
+        decoder: &mut EntityDecoder,
+        _schema: &IfcSchema,
+        quality: TessellationQuality,
+        rtc_file_units: (f64, f64, f64),
+    ) -> Option<Result<Mesh>> {
+        Some(
+            self.lower_rebased(entity, decoder, quality, Some(rtc_file_units))
+                .and_then(|plan| plan.evaluate()),
+        )
     }
 
     fn supported_types(&self) -> Vec<IfcType> {

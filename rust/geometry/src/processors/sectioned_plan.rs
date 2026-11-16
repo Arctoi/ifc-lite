@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 //! Owned sampled section/ring placement before production cap/wall construction.
 //! Lengths remain in file units. These are f64 sampled rings and section frames,
-//! not analytic surfaces or final product placement/RTC output.
+//! not analytic surfaces or final product placement. A plan lowered in an RTC
+//! frame holds its rings already rebased in f64, so the f32 narrowing in
+//! [`SectionedPlan::evaluate`] keeps national-grid detail.
 use super::sectioned_mesh::{
     clean_region, emit_caps, emit_side_walls, interpolate_section, place_section, same_topology,
     Section,
@@ -25,6 +27,8 @@ pub(crate) struct SectionedPlan {
     frames: Vec<AlignmentFrame>,
     /// An `IfcSectionedSurface`: open sections joined by strips, no caps.
     open: bool,
+    /// The rings and frame origins were rebased by the item-frame RTC offset.
+    rtc_applied: bool,
 }
 
 pub(super) fn lower(
@@ -32,6 +36,7 @@ pub(super) fn lower(
     decoder: &mut EntityDecoder,
     quality: TessellationQuality,
     profile_processor: &ProfileProcessor,
+    rtc_file_units: Option<(f64, f64, f64)>,
 ) -> Result<SectionedPlan> {
     // IfcSectionedSurface lists its positions before its sections and lofts
     // open cross profiles into a surface; the solid lofts closed areas.
@@ -142,6 +147,19 @@ pub(super) fn lower(
         entity.id,
     )?;
     plan.open = open;
+    if let Some((x, y, z)) = rtc_file_units {
+        // The directrix carries the model's absolute coordinates (national
+        // grids put a road at northing ~6.6e6, where an f32 steps 0.5 m), so
+        // the rings are rebased here, in f64, before `evaluate` narrows them.
+        let rtc = nalgebra::Vector3::new(x, y, z);
+        for point in plan.rings_3d.iter_mut().flatten().flatten().flatten() {
+            *point -= rtc;
+        }
+        for frame in &mut plan.frames {
+            frame.origin -= rtc;
+        }
+        plan.rtc_applied = true;
+    }
     Ok(plan)
 }
 
@@ -216,6 +234,7 @@ fn sample(
         rings_3d,
         frames,
         open: false,
+        rtc_applied: false,
     })
 }
 
@@ -226,11 +245,13 @@ impl SectionedPlan {
             rings_3d,
             frames,
             open,
+            rtc_applied,
         } = self;
+        let mut mesh = Mesh::new();
+        mesh.rtc_applied = *rtc_applied;
         if *open {
             // Strips between consecutive sections with the same break
             // points; an authored change of point count leaves a gap.
-            let mut mesh = Mesh::new();
             for i in 1..sections.len() {
                 if same_topology(&sections[i - 1], &sections[i]) {
                     let (prev, this) = (&rings_3d[i - 1][0][0], &rings_3d[i][0][0]);
@@ -245,7 +266,6 @@ impl SectionedPlan {
         // and reopens the next one with a backwards-facing cap. The cap's shading
         // normal is the directrix tangent direction at that station so
         // flat-shaded renderers don't sample the side-wall normal.
-        let mut mesh = Mesh::new();
         let flip = !is_proper(&frames[0]);
         emit_caps(
             &mut mesh,

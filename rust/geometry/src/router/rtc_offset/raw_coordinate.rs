@@ -41,6 +41,12 @@ impl GeometryRouter {
             IfcType::IfcSurfaceOfLinearExtrusion => {
                 crate::processors::SurfaceOfLinearExtrusionProcessor::first_vertex(item, decoder)
             }
+            // The directrix start (Arctoi review of #1336): the sweep follows
+            // a directrix in absolute coordinates, so a national-grid road
+            // surface or sectioned solid is rebased before narrowing.
+            IfcType::IfcSectionedSurface | IfcType::IfcSectionedSolidHorizontal => {
+                crate::processors::SectionedSolidHorizontalProcessor::first_vertex(item, decoder)
+            }
             IfcType::IfcFaceBasedSurfaceModel | IfcType::IfcShellBasedSurfaceModel => {
                 let shells = item.get(0)?.as_list()?;
                 let shell_id = shells.first()?.as_entity_ref()?;
