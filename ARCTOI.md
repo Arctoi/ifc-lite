@@ -1,9 +1,13 @@
-# ifc-lite-geometry 28.2.0 with Arctoi's patches
+# ifc-lite-geometry 30.0.0 with Arctoi's patches
 
-This branch holds only the published `ifc-lite-geometry` 28.2.0 crate (MPL-2.0,
-from crates.io, built from LTplus-AG/ifc-lite c748326ee) plus Arctoi's patches,
-so Arctoi can pin it as a small Cargo git dependency. Modified files stay under
-MPL-2.0.
+This branch holds only the published `ifc-lite-geometry` 30.0.0 crate (MPL-2.0,
+from crates.io, built from LTplus-AG/ifc-lite v13.0.0, d97f72e06) plus
+Arctoi's patches, so Arctoi can pin it as a small Cargo git dependency.
+Modified files stay under MPL-2.0.
+
+The patches were carried over from `arctoi/ifc-lite-geometry-28.2.0-patched`
+(8988c9f8e) unchanged and without conflicts. Upstream's changes from 28.2.0 to
+30.0.0 contain none of them, so none were dropped.
 
 1. Swept-area solids along an IFC 4.3 `IfcGradientCurve` directrix follow its
    vertical profile and honour StartParam/EndParam (as a length or a
